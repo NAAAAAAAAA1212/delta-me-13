@@ -186,10 +186,11 @@
         }
         .footer {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
             width: calc(100% - 100px);
             padding: 0 20px;
+            gap: 15px; /* 增加主界面和时间之间的间距 */
         }
         .main-interface {
             color: white;
@@ -197,7 +198,6 @@
             font-weight: bold;
             font-family: 'Courier New', monospace;
             text-shadow: 0 0 8px #4da6ff;
-            margin-left: 350px; /* 向右偏移，超过中间位置 */
         }
         .time-display {
             color: white;
@@ -395,10 +395,10 @@
             top: 20px;
             left: 20px;
             color: #ff69b4; /* 粉色 */
-            font-size: 16px;
+            font-size: 20px; /* 字体更大 */
             font-family: 'Courier New', monospace;
             white-space: pre-wrap;
-            line-height: 1.5;
+            line-height: 1.8; /* 行距更大 */
             z-index: 310;
             opacity: 0;
             transition: opacity 0.3s ease;
@@ -458,14 +458,14 @@
                 <button class="file-button destruct-button" data-id="7">
                     <div class="button-id">7</div>
                     <div class="button-icon-container">
-                        <img src="7.png" alt="7" class="button-icon" onerror="handleImageError(this);">
+                        <!-- 按钮7不加载图片 -->
                     </div>
                     <div class="button-label">[自毁.exe]</div>
                 </button>
                 <button class="file-button hidden-button" data-id="8">
                     <div class="button-id">8</div>
                     <div class="button-icon-container">
-                        <img src="8.png" alt="8" class="button-icon" onerror="handleImageError(this);">
+                        <!-- 按钮8不加载图片 -->
                     </div>
                     <div class="button-label">[▇▇▇▇▇▇▇▇▇▇▇▇]</div>
                 </button>
@@ -507,11 +507,20 @@
             iconContainer.classList.add('no-icon-container');
         }
         
-        // 检查图片是否加载成功
+        // 检查图片是否加载成功（按钮7和8不加载图片）
         function checkImageLoad() {
             document.querySelectorAll('.button-icon').forEach(img => {
+                const button = img.closest('.file-button');
+                const buttonId = button.getAttribute('data-id');
+                
+                // 按钮7和8不加载图片
+                if (buttonId === '7' || buttonId === '8') {
+                    img.parentElement.style.display = 'none';
+                    button.classList.remove('has-icon');
+                    return;
+                }
+                
                 if (img.complete && img.naturalHeight !== 0) {
-                    const button = img.closest('.file-button');
                     button.classList.add('has-icon');
                 } else {
                     img.addEventListener('load', function() {
@@ -573,7 +582,6 @@
         // 逐字符显示文本
         function typeText(element, text, callback) {
             let index = 0;
-            element.textContent = '';
             
             function typeNextChar() {
                 if (index < text.length) {
@@ -588,21 +596,33 @@
             typeNextChar();
         }
 
-        // 逐行显示文本
+        // 逐行显示文本（保留之前内容）
         function displayTextLines(lines) {
-            const textOutput = document.createElement('div');
-            textOutput.className = 'text-output';
-            document.body.appendChild(textOutput);
+            let textOutput = document.querySelector('.text-output');
+            
+            // 如果不存在，创建新的
+            if (!textOutput) {
+                textOutput = document.createElement('div');
+                textOutput.className = 'text-output';
+                document.body.appendChild(textOutput);
+            }
             
             textOutput.classList.add('active');
             
             let currentLine = 0;
+            const existingContent = textOutput.textContent;
+            if (existingContent) {
+                textOutput.textContent = existingContent + '\n';
+            }
             
             function displayNextLine() {
                 if (currentLine < lines.length) {
                     const line = lines[currentLine].trim();
                     if (line) {
-                        typeText(textOutput, line + '\n', function() {
+                        const lineElement = document.createElement('div');
+                        textOutput.appendChild(lineElement);
+                        
+                        typeText(lineElement, line, function() {
                             currentLine++;
                             setTimeout(displayNextLine, 1000); // 每行间隔1秒
                         });
@@ -873,6 +893,20 @@
             });
         });
 
+        // 键盘快捷键：按1-8触发对应按钮
+        document.addEventListener('keydown', function(e) {
+            const controlPanel = document.querySelector('.control-panel');
+            if (!controlPanel || controlPanel.style.display === 'none') return;
+            
+            if (e.key >= '1' && e.key <= '8') {
+                const button = document.querySelector(`.file-button[data-id="${e.key}"]`);
+                if (button) {
+                    button.click();
+                    e.preventDefault();
+                }
+            }
+        });
+
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
             // 检查图片加载状态
@@ -885,6 +919,7 @@
             console.log('控制台可用指令:');
             console.log('showIds(true)  - 显示按钮编号');
             console.log('showIds(false) - 隐藏按钮编号');
+            console.log('键盘快捷键: 按1-8可触发对应按钮');
             console.log('请确保 destroyt.txt 文件存在且可访问');
             
             // 初始化时间显示
